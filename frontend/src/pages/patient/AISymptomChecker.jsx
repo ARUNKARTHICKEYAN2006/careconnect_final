@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, AlertTriangle, Info } from 'lucide-react';
+import API_BASE_URL from '../../config';
 
 const AISymptomChecker = () => {
   const [messages, setMessages] = useState([
@@ -18,7 +19,7 @@ const AISymptomChecker = () => {
 
     try {
       // Calling our mock local AI endpoint
-      const res = await fetch('http://localhost:5000/api/ai/symptom-checker', {
+      const res = await fetch(`${API_BASE_URL}/api/ai/symptom-checker`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symptoms: userMsg.text })

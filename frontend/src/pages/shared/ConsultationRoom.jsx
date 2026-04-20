@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Send, LogOut } from 'lucide-react';
+import API_BASE_URL from '../../config';
 
-const socket = io('http://localhost:5000');
+const socket = io(API_BASE_URL);
 
 const ConsultationRoom = () => {
   const { roomId } = useParams();
