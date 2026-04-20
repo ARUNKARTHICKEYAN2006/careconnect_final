@@ -2,6 +2,13 @@
 
 > **CareConnect** is a robust, dynamic, and full-stack telemedicine and healthcare management platform that easily bridges the gap between patients, healthcare professionals, and system administrators. 
 
+## 🌐 Live Application
+
+The platform is deployed live and can be accessed at the links below:
+
+- **Frontend Application**: [https://careconnect-frontend-iu76.onrender.com](https://careconnect-frontend-iu76.onrender.com)
+- **Backend API**: [https://careconnect-backend-8s9e.onrender.com](https://careconnect-backend-8s9e.onrender.com)
+
 ## 🌟 Key Features
 
 CareConnect features distinct portals seamlessly connected to a robust Node.js backend:
@@ -24,7 +31,7 @@ CareConnect features distinct portals seamlessly connected to a robust Node.js b
 - 🍃 **MongoDB** & **Mongoose**: Flexible NoSQL document database.
 - 🔌 **Socket.io**: Real-time bidirectional event-based communication.
 
-## 🚀 Getting Started
+## 🚀 Local Development
 
 To get a local instance of CareConnect running on your machine:
 
@@ -46,4 +53,4 @@ npm run dev
 ```
 
 ### 3. Usage:
-Open your browser and navigate to `http://localhost:5173/` (or the port specified by Vite) to explore the CareConnect platform.
+Open `http://localhost:5173/` locally to explore the platform. When running live, the app automatically communicates with the Render production backend.
