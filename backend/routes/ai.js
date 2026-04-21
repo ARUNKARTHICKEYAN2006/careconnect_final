@@ -2,18 +2,23 @@ const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini with the API Key from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
 router.post('/symptom-checker', async (req, res) => {
   const { symptoms } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: "AI Service not configured on server." });
+  if (!apiKey) {
+    console.error("CRITICAL: GEMINI_API_KEY is missing from environment variables.");
+    return res.status(500).json({ 
+      message: "AI configuration error. Please ensure GEMINI_API_KEY is set in Render.",
+      urgencyLevel: "Medium",
+      disclaimer: "Informational only."
+    });
   }
 
   try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const prompt = `
       You are a professional medical assistant for the "CareConnect" telemedicine platform.
       A patient is describing the following symptoms: "${symptoms}".
@@ -34,27 +39,26 @@ router.post('/symptom-checker', async (req, res) => {
     const response = await result.response;
     const text = response.text();
     
-    // Robust parsing: extract JSON even if it's wrapped in triple backticks or other text
     let aiResponse;
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : text;
       aiResponse = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error("Parse Error. Raw text from AI:", text);
+      console.error("AI returned non-JSON text:", text);
       aiResponse = {
-        message: text.substring(0, 500), // Fallback to raw text if JSON fails
+        message: text.substring(0, 500).replace(/\{|\}|\[|\]/g, ''), 
         urgencyLevel: "Medium",
-        disclaimer: "Informational only."
+        disclaimer: "Informational only. Please see a doctor."
       };
     }
 
     res.json(aiResponse);
 
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("Gemini API Error details:", error.message);
     res.status(500).json({ 
-      message: "Our AI brain is briefly offline. Please try again or book a consultation.",
+      message: `AI service error: ${error.message}. Please try again shortly.`,
       urgencyLevel: "Medium",
       disclaimer: "Informational only." 
     });
@@ -64,8 +68,9 @@ router.post('/symptom-checker', async (req, res) => {
 router.post('/explain-diagnosis', async (req, res) => {
   const { diagnosis } = req.body;
   try {
-    const prompt = `Explain the medical diagnosis "${diagnosis}" in very simple, reassuring terms for a patient. Keep it under 3 sentences.`;
-    const result = await model.generateContent(prompt);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(`Explain the medical diagnosis "${diagnosis}" in very simple, reassuring terms for a patient. Keep it under 3 sentences.`);
     res.json({ explanation: result.response.text(), disclaimer: 'Informational use only.' });
   } catch (err) {
     res.json({ explanation: `Checking details for ${diagnosis}... please wait.`, disclaimer: 'Informational use only.' });
@@ -75,8 +80,9 @@ router.post('/explain-diagnosis', async (req, res) => {
 router.post('/medication-check', async (req, res) => {
   const { medication, allergies } = req.body;
   try {
-    const prompt = `Is ${medication} safe for someone with ${allergies} allergies? Answer strictly in terms of common known conflicts. Always advise consulting a doctor.`;
-    const result = await model.generateContent(prompt);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(`Is ${medication} safe for someone with ${allergies} allergies? Answer strictly in terms of common known conflicts. Always advise consulting a doctor.`);
     res.json({ safe: true, message: result.response.text() });
   } catch (err) {
     res.json({ safe: true, message: "Always confirm medication safety with your prescribing physician." });

@@ -5,7 +5,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -20,10 +24,11 @@ const io = new Server(server, {
   }
 });
 
-// Connect to Local MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/careconnect')
-  .then(() => console.log('MongoDB local connected via Mongoose'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Connect to MongoDB (Atlas in production, local in development)
+const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/careconnect';
+mongoose.connect(mongoURI)
+  .then(() => console.log('MongoDB connection established successfully'))
+  .catch(err => console.warn('MongoDB connection warning (ignoring for now to allow AI testing):', err.message));
 
 // Basic Socket.io handler for real-time chat between doctor and patient
 io.on('connection', (socket) => {
