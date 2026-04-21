@@ -27,6 +27,23 @@
   --bg-dark: #f8fafc;
 }
 
+/* Dark Mode Overrides for Specific Components */
+.dark-theme .chat-bubble.ai {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.dark-theme .input-field {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.dark-theme .input-field:focus {
+  background: #0f172a;
+}
+
 body {
   background: var(--body-bg);
   background-image: 
