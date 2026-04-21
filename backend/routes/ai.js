@@ -18,9 +18,16 @@ router.post('/symptom-checker', async (req, res) => {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Attempt to find the best available model
+    // Exhaustive list of all possible model names
     let model;
-    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    const modelNames = [
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+      "gemini-1.0-pro",
+      "gemini-pro",
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-pro-latest"
+    ];
     
     // We'll try the first one, if it fails, the catch block will help us
     model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
