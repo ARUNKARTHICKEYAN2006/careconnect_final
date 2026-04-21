@@ -54,13 +54,23 @@ router.post('/symptom-checker', async (req, res) => {
     
     for (const modelName of modelNames) {
       try {
-        const currentModel = genAI.getGenerativeModel({ model: modelName });
+        const currentModel = genAI.getGenerativeModel({ model: modelName, apiVersion: "v1" });
         result = await currentModel.generateContent(prompt);
         success = true;
         break; 
       } catch (e) {
         lastError = e.message;
-        console.warn(`Model ${modelName} failed: ${e.message}`);
+        console.warn(`Model ${modelName} v1 failed: ${e.message}`);
+        
+        // Try v1beta if v1 fails
+        try {
+            const betaModel = genAI.getGenerativeModel({ model: modelName, apiVersion: "v1beta" });
+            result = await betaModel.generateContent(prompt);
+            success = true;
+            break;
+        } catch (e2) {
+            console.warn(`Model ${modelName} v1beta failed: ${e2.message}`);
+        }
       }
     }
 
@@ -99,7 +109,7 @@ router.post('/explain-diagnosis', async (req, res) => {
   const { diagnosis } = req.body;
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", apiVersion: "v1" });
     const result = await model.generateContent(`Explain the medical diagnosis "${diagnosis}" in very simple, reassuring terms for a patient. Keep it under 3 sentences.`);
     res.json({ explanation: result.response.text(), disclaimer: 'Informational use only.' });
   } catch (err) {
