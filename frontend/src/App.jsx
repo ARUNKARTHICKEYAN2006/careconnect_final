@@ -5,10 +5,12 @@ import PatientPortal from './pages/patient/PatientPortal';
 import DoctorPortal from './pages/doctor/DoctorPortal';
 import AdminPortal from './pages/admin/AdminPortal';
 import ConsultationRoom from './pages/shared/ConsultationRoom';
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
   return (
     <BrowserRouter>
+      <ThemeToggle />
       <Routes>
         <Route path="/" element={<Landing />} />
         

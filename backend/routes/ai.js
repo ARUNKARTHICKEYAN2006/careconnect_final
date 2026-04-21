@@ -74,4 +74,29 @@ router.post('/appointment-prep', (req, res) => {
   });
 });
 
+router.post('/auto-prescribe', async (req, res) => {
+  const { notes } = req.body;
+  try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const result = await groq.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: "You are an AI medical assistant for CareConnect. The doctor will provide rough notes. You must convert them into a professional, cleanly formatted prescription block. Include headers for: Diagnosis, Medications (with dosage/frequency), and Medical Advice. Keep it purely text-based and professional." 
+        },
+        { 
+          role: "user", 
+          content: `Rough Notes: "${notes}"`
+        }
+      ],
+      model: "llama-3.1-8b-instant"
+    });
+    
+    res.json({ prescription: result.choices[0].message.content });
+  } catch (err) {
+    console.error("Auto-Prescribe Error:", err.message);
+    res.status(500).json({ error: "Unable to generate prescription. Please type manually." });
+  }
+});
+
 module.exports = router;

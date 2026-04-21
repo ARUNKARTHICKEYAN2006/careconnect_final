@@ -26,19 +26,44 @@ const Queue = () => {
   const [patients, setPatients] = useState(initialPatients);
   const [showPrescription, setShowPrescription] = useState(false);
   const [activePatient, setActivePatient] = useState(null);
+  
+  // AI Assist State
+  const [rxText, setRxText] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleRxClick = (patient) => {
     setActivePatient(patient);
+    setRxText('');
     setShowPrescription(true);
   };
 
   const handleSendRx = () => {
     setShowPrescription(false);
     if(activePatient) {
-      // Remove patient from queue to simulate completion
       setPatients(patients.filter(p => p.id !== activePatient.id));
       setActivePatient(null);
     }
+  };
+
+  const handleMagicAssist = async () => {
+    if (!rxText.trim()) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch(`https://careconnect-backend-1i1r.onrender.com/api/ai/auto-prescribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: rxText })
+      });
+      const data = await res.json();
+      if (data.prescription) {
+        setRxText(data.prescription);
+      } else {
+        alert(data.error || "Failed to generate.");
+      }
+    } catch (error) {
+      alert("Error connecting to AI service.");
+    }
+    setIsGenerating(false);
   };
 
   return (
@@ -57,13 +82,38 @@ const Queue = () => {
             style={{ overflow: 'hidden' }}
           >
             <div className="glass-panel" style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(255,255,255,0.8) 100%)', border: '1px solid rgba(79, 70, 229, 0.2)' }}>
-              <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FilePlus2 color="var(--primary)" /> Digital Prescription Writer for {activePatient?.name}
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <FilePlus2 color="var(--primary)" /> Digital Prescription Writer for {activePatient?.name}
+                </h3>
+                <motion.button 
+                  whileHover={{ scale: isGenerating ? 1 : 1.05 }} 
+                  whileTap={{ scale: isGenerating ? 1 : 0.95 }}
+                  onClick={handleMagicAssist}
+                  disabled={isGenerating}
+                  style={{ 
+                    padding: '8px 16px', 
+                    background: 'linear-gradient(135deg, #a855f7, #6366f1)', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '20px', 
+                    cursor: isGenerating ? 'wait' : 'pointer',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+                  }}
+                >
+                  {isGenerating ? '✨ Magic Working...' : '✨ Magic AI Assist'}
+                </motion.button>
+              </div>
               <textarea 
                 className="input-field" 
-                rows={5} 
-                placeholder="Write medicines, dosage, duration, and advice here..."
+                rows={8} 
+                value={rxText}
+                onChange={(e) => setRxText(e.target.value)}
+                placeholder="Write rough notes and hit ✨ Magic AI Assist... (e.g. fever, paracetamol 500mg)"
                 style={{ marginBottom: '16px', resize: 'vertical' }}
               ></textarea>
               <div style={{ display: 'flex', gap: '12px' }}>
