@@ -17,7 +17,13 @@ router.post('/symptom-checker', async (req, res) => {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // Attempt to find the best available model
+    let model;
+    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    
+    // We'll try the first one, if it fails, the catch block will help us
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are a professional medical assistant for the "CareConnect" telemedicine platform.
@@ -35,7 +41,22 @@ router.post('/symptom-checker', async (req, res) => {
       "disclaimer": (the medical disclaimer).
     `;
 
-    const result = await model.generateContent(prompt);
+    let result;
+    let success = false;
+    
+    for (const modelName of modelNames) {
+      try {
+        const currentModel = genAI.getGenerativeModel({ model: modelName });
+        result = await currentModel.generateContent(prompt);
+        success = true;
+        break; 
+      } catch (e) {
+        console.warn(`Model ${modelName} failed, trying next...`);
+      }
+    }
+
+    if (!success) throw new Error("None of the Gemini models were accessible with this API key.");
+
     const response = await result.response;
     const text = response.text();
     
