@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, AlertTriangle, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import API_BASE_URL from '../../config';
 
 const AISymptomChecker = () => {
@@ -50,17 +51,39 @@ const AISymptomChecker = () => {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {messages.map((msg, i) => (
-            <div key={i} className={`chat-bubble ${msg.type}`}>
-              <p>{msg.text}</p>
-              {msg.urgency && (
-                <div style={{ marginTop: '8px', padding: '4px 8px', backgroundColor: msg.urgency === 'High' ? 'var(--danger)' : '#fef08a', color: msg.urgency === 'High' ? 'white' : '#854d0e', borderRadius: '4px', display: 'inline-block', fontSize: '0.8rem' }}>
-                   Urgency: {msg.urgency}
-                </div>
-              )}
-            </div>
-          ))}
-          {loading && <div className="chat-bubble ai"><p>...</p></div>}
+          <AnimatePresence>
+            {messages.map((msg, i) => (
+              <motion.div 
+                key={i} 
+                className={`chat-bubble ${msg.type}`}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              >
+                <p>{msg.text}</p>
+                {msg.urgency && (
+                  <div style={{ marginTop: '8px', padding: '4px 8px', backgroundColor: msg.urgency === 'High' ? 'var(--danger)' : msg.urgency === 'Medium' ? '#f59e0b' : '#10b981', color: 'white', borderRadius: '4px', display: 'inline-block', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                     Urgency: {msg.urgency}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+            
+            {loading && (
+              <motion.div 
+                key="loading-bubble"
+                className="chat-bubble ai"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '16px 20px' }}
+              >
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div style={{ padding: '16px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '8px' }}>
