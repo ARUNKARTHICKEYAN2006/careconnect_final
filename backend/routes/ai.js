@@ -43,6 +43,7 @@ router.post('/symptom-checker', async (req, res) => {
 
     let result;
     let success = false;
+    let lastError = "";
     
     for (const modelName of modelNames) {
       try {
@@ -51,11 +52,12 @@ router.post('/symptom-checker', async (req, res) => {
         success = true;
         break; 
       } catch (e) {
-        console.warn(`Model ${modelName} failed, trying next...`);
+        lastError = e.message;
+        console.warn(`Model ${modelName} failed: ${e.message}`);
       }
     }
 
-    if (!success) throw new Error("None of the Gemini models were accessible with this API key.");
+    if (!success) throw new Error(`Google API says: "${lastError}"`);
 
     const response = await result.response;
     const text = response.text();
