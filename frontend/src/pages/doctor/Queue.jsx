@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, FilePlus2, Clock, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import API_BASE_URL from '../../config';
 
 const initialPatients = [
   { id: '1', name: 'John Doe', time: '10:00 AM', status: 'Waiting' },
@@ -49,7 +50,7 @@ const Queue = () => {
     if (!rxText.trim()) return;
     setIsGenerating(true);
     try {
-      const res = await fetch(`https://careconnect-backend-1i1r.onrender.com/api/ai/auto-prescribe`, {
+      const res = await fetch(`${API_BASE_URL}/api/ai/auto-prescribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: rxText })
@@ -59,9 +60,11 @@ const Queue = () => {
         setRxText(data.prescription);
       } else {
         alert(data.error || "Failed to generate.");
+        console.error("AI Generation failed:", data);
       }
     } catch (error) {
-      alert("Error connecting to AI service.");
+      console.error("Fetch Error:", error);
+      alert("Error connecting to AI service. Please wait a moment for the server to update and try again.");
     }
     setIsGenerating(false);
   };
