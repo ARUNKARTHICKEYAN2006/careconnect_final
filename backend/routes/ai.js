@@ -24,7 +24,7 @@ router.post('/symptom-checker', async (req, res) => {
           content: `Analyze symptoms: ${symptoms}`
         }
       ],
-      model: "llama3-8b-8192",
+      model: "llama-3.1-8b-instant",
       response_format: { type: "json_object" }
     });
 
@@ -46,7 +46,7 @@ router.post('/explain-diagnosis', async (req, res) => {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const result = await groq.chat.completions.create({
       messages: [{ role: "user", content: `Explain diagnosis ${diagnosis} simply.` }],
-      model: "llama3-8b-8192"
+      model: "llama-3.1-8b-instant"
     });
     res.json({ explanation: result.choices[0].message.content, disclaimer: 'Informational use only.' });
   } catch (err) {
@@ -60,7 +60,7 @@ router.post('/medication-check', async (req, res) => {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const result = await groq.chat.completions.create({
       messages: [{ role: "user", content: `Safety of ${medication} for ${allergies} allergies?` }],
-      model: "llama3-8b-8192"
+      model: "llama-3.1-8b-instant"
     });
     res.json({ safe: true, message: result.choices[0].message.content });
   } catch (err) {
