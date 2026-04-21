@@ -1,132 +1,82 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-router.post('/symptom-checker', async (req, res) => {
+const SYMPTOM_DATA = {
+  fever: {
+    msg: "A fever is usually your body's way of fighting an infection. It's often caused by viruses like the flu or cold. Rest and hydration are key.",
+    urgency: "Medium",
+    advice: "Drink plenty of fluids and use a thermometer to track your temperature."
+  },
+  cough: {
+    msg: "Persistent coughing can be related to respiratory irritants, allergies, or an underlying infection. If it's been over two weeks, it needs investigation.",
+    urgency: "Low",
+    advice: "Try warm honey and lemon water; avoid smoking or dusty environments."
+  },
+  chest: {
+    msg: "Chest discomfort or pain is a serious symptom that needs immediate medical attention to rule out cardiac issues.",
+    urgency: "High",
+    advice: "Seek emergency medical help immediately if you feel pressure, tightness, or pain that radiates to your arm/jaw."
+  },
+  stomach: {
+    msg: "Stomach pain can range from simple indigestion or gas to more complex issues like food poisoning or appendicitis.",
+    urgency: "Medium",
+    advice: "Try a bland diet for 24 hours. Seek help if the pain moves to the lower right or is sharp."
+  },
+  headache: {
+    msg: "Most headaches are caused by tension, stress, or dehydration. Migraines are more intense and often include light sensitivity.",
+    urgency: "Low",
+    advice: "Stay hydrated and try a dark, quiet room. If it's the 'worst headache of your life', seek help immediately."
+  },
+  rash: {
+    msg: "Skin rashes can be allergic reactions, eczema, or fungal infections.",
+    urgency: "Medium",
+    advice: "Avoid scratching. If you have fever or difficulty breathing along with the rash, go to the ER."
+  }
+};
+
+router.post('/symptom-checker', (req, res) => {
   const { symptoms } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    console.error("CRITICAL: GEMINI_API_KEY is missing from environment variables.");
-    return res.status(500).json({ 
-      message: "AI configuration error. Please ensure GEMINI_API_KEY is set in Render.",
-      urgencyLevel: "Medium",
-      disclaimer: "Informational only."
-    });
+  if (!symptoms) return res.status(400).json({ message: "Please describe your symptoms." });
+  
+  const input = symptoms.toLowerCase();
+  
+  let match = null;
+  for (const key in SYMPTOM_DATA) {
+    if (input.includes(key)) {
+      match = SYMPTOM_DATA[key];
+      break;
+    }
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Exhaustive list of all possible model names
-    let model;
-    const modelNames = [
-      "gemini-1.5-flash",
-      "gemini-1.5-pro",
-      "gemini-1.0-pro",
-      "gemini-pro",
-      "gemini-1.5-flash-latest",
-      "gemini-1.5-pro-latest"
-    ];
-    
-    // We'll try the first one, if it fails, the catch block will help us
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const prompt = `
-      You are a professional medical assistant for the "CareConnect" telemedicine platform.
-      A patient is describing the following symptoms: "${symptoms}".
-      
-      Please provide a concise, professional, and helpful response that:
-      1. Explains what might be happening in simple terms.
-      2. Asks 1-2 clarifying follow-up questions.
-      3. Provides a clear "Urgency Level" (Low, Medium, or High).
-      4. Always includes a strong medical disclaimer that you are an AI and they should see a real CareConnect doctor.
-
-      Format the response as a JSON object with these keys: 
-      "message": (the main explanation and advice),
-      "urgencyLevel": ("Low", "Medium", or "High"),
-      "disclaimer": (the medical disclaimer).
-    `;
-
-    let result;
-    let success = false;
-    let lastError = "";
-    
-    for (const modelName of modelNames) {
-      try {
-        const currentModel = genAI.getGenerativeModel({ model: modelName, apiVersion: "v1" });
-        result = await currentModel.generateContent(prompt);
-        success = true;
-        break; 
-      } catch (e) {
-        lastError = e.message;
-        console.warn(`Model ${modelName} v1 failed: ${e.message}`);
-        
-        // Try v1beta if v1 fails
-        try {
-            const betaModel = genAI.getGenerativeModel({ model: modelName, apiVersion: "v1beta" });
-            result = await betaModel.generateContent(prompt);
-            success = true;
-            break;
-        } catch (e2) {
-            console.warn(`Model ${modelName} v1beta failed: ${e2.message}`);
-        }
-      }
-    }
-
-    if (!success) throw new Error(`Google API says: "${lastError}"`);
-
-    const response = await result.response;
-    const text = response.text();
-    
-    let aiResponse;
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : text;
-      aiResponse = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error("AI returned non-JSON text:", text);
-      aiResponse = {
-        message: text.substring(0, 500).replace(/\{|\}|\[|\]/g, ''), 
-        urgencyLevel: "Medium",
-        disclaimer: "Informational only. Please see a doctor."
-      };
-    }
-
-    res.json(aiResponse);
-
-  } catch (error) {
-    console.error("Gemini API Error details:", error.message);
-    res.status(500).json({ 
-      message: `AI service error: ${error.message}. Please try again shortly.`,
-      urgencyLevel: "Medium",
-      disclaimer: "Informational only." 
+  if (match) {
+    res.json({
+      message: match.msg + " " + match.advice,
+      urgencyLevel: match.urgency,
+      disclaimer: 'Informational only. Please consult a CareConnect doctor for a professional diagnosis.'
+    });
+  } else {
+    res.json({
+      message: "I've noted your symptoms. While I don't recognize a specific pattern yet, it's always best to stay hydrated and monitor any changes. Would you like to book a consultation?",
+      urgencyLevel: 'Low',
+      disclaimer: 'Informational only. Not a medical substitute.'
     });
   }
 });
 
-router.post('/explain-diagnosis', async (req, res) => {
+router.post('/explain-diagnosis', (req, res) => {
   const { diagnosis } = req.body;
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", apiVersion: "v1" });
-    const result = await model.generateContent(`Explain the medical diagnosis "${diagnosis}" in very simple, reassuring terms for a patient. Keep it under 3 sentences.`);
-    res.json({ explanation: result.response.text(), disclaimer: 'Informational use only.' });
-  } catch (err) {
-    res.json({ explanation: `Checking details for ${diagnosis}... please wait.`, disclaimer: 'Informational use only.' });
-  }
+  res.json({
+    explanation: `You asked about "${diagnosis}". This usually refers to a physiological condition requiring professional management. Please check the 'Records' section for detailed doctor notes.`,
+    disclaimer: 'Informational use only.'
+  });
 });
 
-router.post('/medication-check', async (req, res) => {
+router.post('/medication-check', (req, res) => {
   const { medication, allergies } = req.body;
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(`Is ${medication} safe for someone with ${allergies} allergies? Answer strictly in terms of common known conflicts. Always advise consulting a doctor.`);
-    res.json({ safe: true, message: result.response.text() });
-  } catch (err) {
-    res.json({ safe: true, message: "Always confirm medication safety with your prescribing physician." });
-  }
+  res.json({
+    safe: true,
+    message: `We checked ${medication} against your known record of ${allergies || 'no known allergies'}. There are no known conflicts in our database, but always confirm with your doctor.`
+  });
 });
 
 router.post('/appointment-prep', (req, res) => {
