@@ -34,9 +34,20 @@ router.post('/symptom-checker', async (req, res) => {
     const response = await result.response;
     const text = response.text();
     
-    // Clean and parse the JSON response from Gemini
-    const cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-    const aiResponse = JSON.parse(cleanText);
+    // Robust parsing: extract JSON even if it's wrapped in triple backticks or other text
+    let aiResponse;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : text;
+      aiResponse = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error("Parse Error. Raw text from AI:", text);
+      aiResponse = {
+        message: text.substring(0, 500), // Fallback to raw text if JSON fails
+        urgencyLevel: "Medium",
+        disclaimer: "Informational only."
+      };
+    }
 
     res.json(aiResponse);
 
