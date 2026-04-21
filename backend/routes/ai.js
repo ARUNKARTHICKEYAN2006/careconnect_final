@@ -2,42 +2,38 @@ const express = require('express');
 const router = express.Router();
 const Groq = require('groq-sdk');
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 router.post('/symptom-checker', async (req, res) => {
   const { symptoms } = req.body;
+  const apiKey = process.env.GROQ_API_KEY;
 
-  if (!process.env.GROQ_API_KEY) {
-      return res.status(500).json({ error: "AI Service not configured." });
+  if (!apiKey) {
+      console.error("GROQ_API_KEY is missing from Render env vars!");
+      return res.status(500).json({ error: "AI Service not configured on Render yet." });
   }
 
   try {
+    const groq = new Groq({ apiKey });
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `You are a medical assistant for 'CareConnect'. 
-          Format your response EXCLUSIVELY as a JSON object with these keys: 
-          "message" (explanation + advice), 
-          "urgencyLevel" ("Low", "Medium", "High"), 
-          "disclaimer" (required medical disclaimer).`
+          content: "You are a professional medical assistant for 'CareConnect'. Output ONLY JSON with keys: message, urgencyLevel, disclaimer."
         },
         {
           role: "user",
-          content: `The patient says: "${symptoms}"`
+          content: `Analyze symptoms: ${symptoms}`
         }
       ],
       model: "llama3-8b-8192",
       response_format: { type: "json_object" }
     });
 
-    const aiResponse = JSON.parse(chatCompletion.choices[0].message.content);
-    res.json(aiResponse);
+    res.json(JSON.parse(chatCompletion.choices[0].message.content));
 
   } catch (error) {
-    console.error("Groq Error:", error);
+    console.error("GROQ_ERROR:", error.message);
     res.status(500).json({ 
-        message: "AI assistant is taking a quick break. Please try again.",
+        message: `Groq error: ${error.message}. Check your API Key in Render.`,
         urgencyLevel: "Medium",
         disclaimer: "Informational only."
     });
@@ -47,37 +43,34 @@ router.post('/symptom-checker', async (req, res) => {
 router.post('/explain-diagnosis', async (req, res) => {
   const { diagnosis } = req.body;
   try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const result = await groq.chat.completions.create({
-      messages: [{ role: "user", content: `Explain the diagnosis "${diagnosis}" in 2 simple sentences for a patient.` }],
+      messages: [{ role: "user", content: `Explain diagnosis ${diagnosis} simply.` }],
       model: "llama3-8b-8192"
     });
     res.json({ explanation: result.choices[0].message.content, disclaimer: 'Informational use only.' });
   } catch (err) {
-    res.json({ explanation: `Checking ${diagnosis}...`, disclaimer: 'Informational only.' });
+    res.json({ explanation: "Unable to explain at this moment.", disclaimer: 'Informational only.' });
   }
 });
 
 router.post('/medication-check', async (req, res) => {
   const { medication, allergies } = req.body;
   try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const result = await groq.chat.completions.create({
-      messages: [{ role: "user", content: `Is ${medication} safe for someone allergic to ${allergies}? Brief answer only.` }],
+      messages: [{ role: "user", content: `Safety of ${medication} for ${allergies} allergies?` }],
       model: "llama3-8b-8192"
     });
     res.json({ safe: true, message: result.choices[0].message.content });
   } catch (err) {
-    res.json({ safe: true, message: "Always verify with your doctor." });
+    res.json({ safe: true, message: "Consult your doctor for safety checks." });
   }
 });
 
 router.post('/appointment-prep', (req, res) => {
   res.json({
-    questions: [
-      "What is the most likely cause of my symptoms?",
-      "Are there alternative treatments?",
-      "How long before I see improvements?",
-      "What lifestyle changes should I make?"
-    ]
+    questions: ["Cause?", "Treatment duration?", "Side effects?", "Follow-up?"]
   });
 });
 
