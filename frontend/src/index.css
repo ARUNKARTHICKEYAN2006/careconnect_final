@@ -6,7 +6,10 @@
   --primary-glow: rgba(79, 70, 229, 0.4);
   --secondary: #f43f5e;
   --accent: #10b981;
+  --success: #10b981;
   --bg-dark: #0f172a;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.2);
   
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.4);

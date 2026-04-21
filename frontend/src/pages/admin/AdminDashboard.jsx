@@ -60,12 +60,35 @@ const AdminDashboard = () => {
                 </td>
                 <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9' }}>
                   {doc.status === 'Pending' && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn-primary" style={{ padding: '8px', display: 'flex', alignItems: 'center', background: 'var(--success)' }} onClick={() => approveDoctor(doc.id)}>
-                        <CheckCircle size={16} />
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button 
+                        className="btn-primary" 
+                        style={{ 
+                          padding: '8px 16px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '6px',
+                          background: 'var(--success)', 
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' 
+                        }} 
+                        onClick={() => approveDoctor(doc.id)}
+                      >
+                        <CheckCircle size={18} />
+                        <span style={{ fontSize: '0.9rem' }}>Approve</span>
                       </button>
-                      <button className="btn-secondary" style={{ padding: '8px', display: 'flex', alignItems: 'center', color: 'var(--danger)', borderColor: 'var(--danger)' }}>
-                        <XCircle size={16} />
+                      <button 
+                        className="btn-secondary" 
+                        style={{ 
+                          padding: '8px 16px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '6px',
+                          color: 'var(--danger)', 
+                          borderColor: 'var(--danger)' 
+                        }}
+                      >
+                        <XCircle size={18} />
+                        <span style={{ fontSize: '0.9rem' }}>Reject</span>
                       </button>
                     </div>
                   )}
